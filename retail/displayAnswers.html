@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Answers</title>
+</head>
+<body>
+    <nav class="topnav">
+        <a href="/index.html">Home</a> &NonBreakingSpace;
+        <a href="/retail/retailBingo.html">Bingo Card</a>
+    </nav>
+<main>
+    <h1>Possible Options for Cards</h1>
+    <pre id="answersContent"></pre>
+</main>
+    <script>
+        // Use Fetch API to get the content of answers.txt
+        fetch('answers.txt')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(content => {
+                // Display the content in the pre element
+                document.getElementById('answersContent').textContent = content;
+            })
+            .catch(error => {
+                console.error('Error fetching answers.txt:', error);
+            });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coming Soon</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+
+        .countdown {
+            color: #ff6f61;
+            font-size: 1.5em;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Site Under Maintenance!</h1>
+    <p>We're working on something special behind the scenes. Stay tuned for the big reveal!</p>
+    <div class="countdown" id="countdown"></div>
+
+    <script>
+        // Set the date we're counting down to
+        const countDownDate = new Date("Feb 13, 2024 23:59:00").getTime(); // -------------------------------------------------------------------
+
+        // Update the countdown every 1 second
+        const x = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = countDownDate - now;
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("countdown").innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+            if (distance < 0) {
+                clearInterval(x);
+                window.location.href = "https://kayleejohnston.xyz/bingo/foodService/food.html"; // ----------------------------------------------------------------
+                // https://www.kayleejohnston.xyz/maintance.html
+                //sites
+                // https://www.kayleejohnston.xyz/index.html
+                // https://www.kayleejohnston.xyz/bingo/bingoSelect.html
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Bingo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #787af7;
+            color: #333;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        td {
+            border: 1px solid #ddd;
+            width: 100px;
+            height: 100px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+        }
+        td.marked {
+            background-color: #f9e79f; /* Highlight selected cells */
+        }
+        td.bingo {
+            background-color: #82e0aa; /* Highlight cells part of the bingo */
+        }
+        button {
+            margin-top: 10px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: #fff;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        button.reset {
+            background-color: #e74c3c;
+        }
+        form {
+            margin-top: 20px;
+        }
+        .email-message {
+            margin-top: 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a href="/index.html">Home</a> &NonBreakingSpace;
+        <a href="/retail/displayAnswers.html">All Possible choices</a>
+    </nav>
+<script>
+    // Function to set a cookie
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+    }
+
+    // Function to get a cookie value
+    function getCookie(name) {
+        const keyValue = document.cookie.match(`(^|;) ?${name}=([^;]*)(;|$)`);
+        return keyValue ? keyValue[2] : null;
+    }
+
+    // Function to read answers from a text file
+    async function fetchAnswers() {
+        const response = await fetch('answers.txt');
+        const text = await response.text();
+        return text.split('\n').filter(answer => answer.trim() !== '');
+    }
+
+    // Function to shuffle answers
+    function shuffleAnswers(answers) {
+        for (let i = answers.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [answers[i], answers[j]] = [answers[j], answers[i]];
+        }
+    }
+
+    // Function to create and display the bingo card
+    async function createBingoCard() {
+        // Check if shuffled answers are stored in a cookie
+        const storedShuffledAnswers = getCookie("shuffledAnswers");
+
+        let answers;
+        if (storedShuffledAnswers) {
+            // Use the stored shuffled answers
+            answers = storedShuffledAnswers.split(",");
+        } else {
+            // Fetch answers from the text file
+            answers = await fetchAnswers();
+
+            // Shuffle the answers and store them in a cookie
+            shuffleAnswers(answers);
+            setCookie("shuffledAnswers", answers.join(","), 365);
+        }
+
+        // Create a 5x5 table for the bingo card
+        const table = document.createElement("table");
+
+        for (let i = 0; i < 5; i++) {
+            const row = table.insertRow();
+
+            for (let j = 0; j < 5; j++) {
+                const cell = row.insertCell();
+                cell.textContent = answers[i * 5 + j];
+                cell.setAttribute("data-answer", answers[i * 5 + j]);
+                cell.addEventListener("click", toggleCell);
+            }
+        }
+
+        // Create a button for downloading the bingo card
+        const downloadButton = document.createElement("button");
+        downloadButton.textContent = "Download Bingo Card";
+        downloadButton.addEventListener("click", downloadBingoCard);
+
+        // Create a button for resetting the bingo card
+        const resetButton = document.createElement("button");
+        resetButton.textContent = "Reset Bingo Card";
+        resetButton.className = "reset";
+        resetButton.addEventListener("click", resetBingoCard);
+
+        // Create a message for sending the card to email
+        const emailMessage = document.createElement("div");
+        emailMessage.className = "email-message";
+        emailMessage.textContent = "Enter your username to download the bingo card.";
+
+        // Create an input field for the username
+        const usernameInput = document.createElement("input");
+        usernameInput.type = "text";
+        usernameInput.placeholder = "Enter your username";
+        usernameInput.id = "username";
+
+        // Append the table, buttons, input field, and message to the body
+        document.body.appendChild(table);
+        document.body.appendChild(downloadButton);
+        document.body.appendChild(resetButton);
+        document.body.appendChild(usernameInput);
+        document.body.appendChild(emailMessage);
+
+        // Check if there is a saved state in cookies
+        const savedState = getCookie("bingoCardState");
+
+        if (savedState) {
+            const savedAnswers = savedState.split(",");
+            // Mark the cells based on the saved state
+            markCells(savedAnswers);
+        }
+    }
+
+    // Function to toggle cell marking
+    function toggleCell() {
+        this.classList.toggle("marked");
+
+        // Check for bingo
+        if (checkBingo()) {
+            notifyBingo();
+        }
+
+        // Save the current state in cookies
+        const markedCells = Array.from(document.querySelectorAll(".marked"));
+        const markedAnswers = markedCells.map(cell => cell.getAttribute("data-answer"));
+        setCookie("bingoCardState", markedAnswers.join(","), 365);
+    }
+
+    // Function to mark cells based on saved state
+    function markCells(savedAnswers) {
+        savedAnswers.forEach(answer => {
+            const cell = document.querySelector(`[data-answer="${answer}"]`);
+            if (cell) {
+                cell.classList.add("marked");
+            }
+        });
+
+        // Check for bingo
+        if (checkBingo()) {
+            notifyBingo();
+        }
+    }
+
+    // Function to check for bingo
+    function checkBingo() {
+        const rows = document.querySelectorAll("tr");
+        const columns = document.querySelectorAll("td");
+
+        // Check rows
+        for (let i = 0; i < rows.length; i++) {
+            const rowCells = rows[i].querySelectorAll("td.marked");
+            if (rowCells.length === 5) {
+                markBingoCells(rowCells);
+                return true;
+            }
+        }
+
+        // Check columns
+        for (let i = 0; i < 5; i++) {
+            const colCells = document.querySelectorAll(`td:nth-child(${i + 1}).marked`);
+            if (colCells.length === 5) {
+                markBingoCells(colCells);
+                return true;
+            }
+        }
+
+        // Check diagonals
+        const diagonal1 = document.querySelectorAll("td[data-answer]:nth-child(6n+1).marked");
+        const diagonal2 = document.querySelectorAll("td[data-answer]:nth-child(4n).marked");
+
+        if (diagonal1.length === 5) {
+            markBingoCells(diagonal1);
+            return true;
+        }
+
+        if (diagonal2.length === 5) {
+            markBingoCells(diagonal2);
+            return true;
+        }
+
+        return false;
+    }
+
+    // Function to mark bingo cells
+    function markBingoCells(cells) {
+        cells.forEach(cell => cell.classList.add("bingo"));
+    }
+
+    // Function to notify the user when they get bingo
+    function notifyBingo() {
+        alert("Bingo! You've got a bingo. Congratulations! You can text the downloaded bingo card to (513) 305-7090 to be entered into a prize drawing!");
+    }
+
+    // Function to download the bingo card as an image
+    function downloadBingoCard() {
+        // Get the username from the input field
+        const username = document.getElementById("username").value;
+
+        // Check if a username is provided
+        if (!username.trim()) {
+            alert("Please enter your username before downloading the bingo card.");
+            return;
+        }
+
+        // Create a canvas and draw the table on it
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = 500;
+        canvas.height = 500;
+
+        // Draw the table
+        ctx.font = "14px Arial";
+        const cells = document.querySelectorAll("td");
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 5);
+            const col = index % 5;
+            ctx.fillText(cell.textContent, col * 100 + 10, row * 100 + 60);
+            if (cell.classList.contains("marked")) {
+                ctx.beginPath();
+                ctx.arc(col * 100 + 50, row * 100 + 50, 40, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+        });
+
+        // Create a download link
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL();
+        link.download = `${username}_${getCurrentDateTime()}_bingo_card.png`;
+        link.click();
+    }
+
+    // Function to reset the bingo card
+    function resetBingoCard() {
+        // Remove the marked and bingo classes from all cells
+        const cells = document.querySelectorAll(".marked, .bingo");
+        cells.forEach(cell => cell.classList.remove("marked", "bingo"));
+
+        // Clear the saved state in cookies
+        setCookie("bingoCardState", "", -1);
+
+        // Reload the page to create a new random bingo card
+        location.reload();
+    }
+
+    // Function to get the current date and time in a formatted string
+    function getCurrentDateTime() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+    }
+
+    // Create the bingo card on page load
+    window.onload = createBingoCard;
+</script>
+
+</body>
+</html>
