@@ -31,3 +31,4 @@ No ID/ Under age
 Belted self scan breaks for no reason
 Asking for a Refund
 digital coupon doesn't come off
+item falls off register
